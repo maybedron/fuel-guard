@@ -3,10 +3,10 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <TinyGPSPlus.h>
-#include <secrets.h>
+#include "secrets.h"
 #define REED_PIN 4
 #define LED_PIN  2
-const unsigned long HEARTBEAT_MS = 30000;   // 6 hours in real use
+const unsigned long HEARTBEAT_MS = 180000;   // 6 hours in real use
 
 TinyGPSPlus gps;
 HardwareSerial gpsSerial(2);
@@ -60,7 +60,22 @@ void sendTelegram(String msg) {
     delay(2000);
   }
 }
-
+void postEvent(const char* type) {
+  if (WiFi.status() != WL_CONNECTED) return;
+  WiFiClientSecure client;
+  client.setInsecure();
+  HTTPClient http;
+  http.begin(client, API_URL);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("x-device-key", DEVICE_KEY);
+  String body = String("{\"deviceId\":\"truck01\",\"type\":\"") + type + "\",\"gpsFix\":" + (gps.location.isValid() ? "true" : "false");
+  if (gps.location.isValid())
+    body += ",\"lat\":" + String(gps.location.lat(), 6) + ",\"lng\":" + String(gps.location.lng(), 6);
+  body += ",\"uptimeS\":" + String(millis() / 1000) + "}";
+  int code = http.POST(body);
+  Serial.printf("API HTTP %d\n", code);
+  http.end();
+}
 void setup() {
   Serial.begin(115200);
   gpsSerial.begin(9600, SERIAL_8N1, 16, 17);
@@ -113,9 +128,11 @@ void loop() {
       digitalWrite(LED_PIN, capOpen);
       if (capOpen) {
         Serial.println("ALERT: CAP OPENED");
+        postEvent("CAP_OPENED");
         sendTelegram("ALERT: Truck 01 fuel cap OPENED! Location: " + locationText());
       } else {
         Serial.println("Cap closed");
+        postEvent("CAP_CLOSED");
         sendTelegram("Truck 01 fuel cap closed");
       }
     }
@@ -124,6 +141,7 @@ void loop() {
   if (millis() - lastHb >= HEARTBEAT_MS) {
     lastHb = millis();
     Serial.println("HEARTBEAT");
+    postEvent("HEARTBEAT");
     sendTelegram("HEARTBEAT: Truck 01 online. Location: " + locationText());
   }
 }
