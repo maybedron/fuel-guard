@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FuelGuard – Smart Anti-Theft Fuel Cap</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#14202b;--mut:#64748b;--bd:#e2e8f0;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--acc:#2563eb;--map:#eaf0f6;--road:#cbd5e1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141b;--card:#17202a;--tx:#e6edf3;--mut:#94a3b8;--bd:#273444;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24;--acc:#60a5fa;--map:#101a24;--road:#2a3a4c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141b;--card:#17202a;--tx:#e6edf3;--mut:#94a3b8;--bd:#273444;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24;--acc:#60a5fa;--map:#101a24;--road:#2a3a4c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--bd)}
+header h1{font-size:18px;margin:0}header small{color:var(--mut)}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:700}
+.live{margin-left:auto;font-size:12px;color:var(--ok)}
+main{max-width:1100px;margin:0 auto;padding:14px;display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:860px){main{grid-template-columns:300px 1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 10px}
+.veh{display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;cursor:pointer;width:100%;background:none;color:inherit;text-align:left;font:inherit}
+.veh.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.ok{background:var(--ok)}.bad{background:var(--bad)}.warn{background:var(--warn)}
+.veh b{display:block}.veh span{color:var(--mut);font-size:12px}
+.banner{background:var(--bad);color:#fff;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-weight:600}
+.banner.w{background:var(--warn);color:#1a1200}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px}
+.stat{border:1px solid var(--bd);border-radius:10px;padding:10px}
+.stat span{font-size:12px;color:var(--mut)}.stat b{display:block;font-size:18px}
+.t-ok{color:var(--ok)}.t-bad{color:var(--bad)}.t-warn{color:var(--warn)}
+.mapwrap{overflow-x:auto}svg{display:block;width:100%;min-width:420px;height:auto;border-radius:10px;background:var(--map)}
+.pulse{animation:p 1.2s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes p{0%{transform:scale(1);opacity:.7}100%{transform:scale(3);opacity:0}}
+.log{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto}
+.log li{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.log time{color:var(--mut);white-space:nowrap}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.b{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 12px;border-radius:8px;cursor:pointer;font:inherit}
+button.b.p{background:var(--acc);color:#fff;border-color:var(--acc)}button.b.d{color:var(--bad)}
+.note{color:var(--mut);font-size:12px;margin:10px 0 0}
+.bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--acc)}
+.col{display:grid;gap:14px}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+<style>
+html:root:not([data-theme="none"]){--bg:#000;--card:rgba(0,12,2,.84);--tx:#b7ffc8;--mut:#4fa866;--bd:rgba(0,255,65,.35);--ok:#00ff41;--bad:#ff2b4a;--warn:#ffb000;--acc:#19e6c8;--map:#020a02;--road:#0b4015;color-scheme:dark}
+body{background:#000;font-family:"Share Tech Mono","Courier New",monospace;font-size:15px;text-shadow:0 0 6px rgba(0,255,65,.35)}
+#rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.38;pointer-events:none}
+body::after{content:"";position:fixed;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px)}
+header,main{position:relative;z-index:1}
+header{background:rgba(0,10,2,.9);border-bottom:1px solid var(--ok);box-shadow:0 0 18px rgba(0,255,65,.25)}
+header h1{color:var(--ok);letter-spacing:.12em;text-shadow:0 0 10px var(--ok),0 0 22px rgba(0,255,65,.6)}
+header h1::before{content:"> "}header h1::after{content:"_";animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.logo{background:#000;color:var(--ok);border:1px solid var(--ok);box-shadow:0 0 10px var(--ok)}
+.card,.stat,.veh{border-color:var(--bd);box-shadow:0 0 12px rgba(0,255,65,.12)}
+.card{backdrop-filter:blur(2px)}
+.stat b,.veh b{color:var(--ok)}
+.stat b.t-bad{color:var(--bad);text-shadow:0 0 10px var(--bad)}.stat b.t-warn{color:var(--warn)}
+h2{color:var(--ok);text-transform:uppercase;letter-spacing:.15em}h2::before{content:"// "}
+.veh.sel{box-shadow:0 0 14px rgba(0,255,65,.55);background:rgba(0,255,65,.07)}
+.dot{box-shadow:0 0 10px currentColor}.dot.ok{box-shadow:0 0 10px var(--ok)}.dot.bad{box-shadow:0 0 12px var(--bad)}.dot.warn{box-shadow:0 0 10px var(--warn)}
+.banner{background:rgba(40,0,6,.92);color:#ff6b80;border:1px solid var(--bad);box-shadow:0 0 18px var(--bad);animation:al 1s infinite;text-shadow:0 0 8px var(--bad)}
+.banner.w{background:rgba(40,28,0,.92);color:var(--warn);border-color:var(--warn);box-shadow:0 0 14px var(--warn);animation:none}
+@keyframes al{50%{box-shadow:0 0 4px var(--bad)}}
+button.b{background:transparent;color:var(--ok);border:1px solid var(--ok);border-radius:4px;font-family:inherit;text-transform:uppercase;letter-spacing:.06em;transition:.15s}
+button.b:hover{background:var(--ok);color:#000;box-shadow:0 0 14px var(--ok);text-shadow:none}
+button.b.p{background:rgba(0,255,65,.15)}button.b.d{color:var(--bad);border-color:var(--bad)}
+button.b.d:hover{background:var(--bad);color:#000;box-shadow:0 0 14px var(--bad)}
+svg{border:1px solid var(--bd);border-radius:6px}
+svg circle[stroke="#fff"]{stroke:#000}
+.bar{background:#052a0e}.bar i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.log li{border-bottom:1px dashed var(--bd)}.log time::before{content:"["}.log time::after{content:"]"}
+.live{color:var(--ok);text-shadow:0 0 8px var(--ok)}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:var(--bd)}
+</style>
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<header><div class="logo">⛽</div><div><h1>FUELGUARD</h1><small>smart anti-theft fuel cap · fleet monitor · v1.0</small></div><div class="live">● SIMULATION ONLINE</div></header>
+<main>
+<aside class="card"><h2>Fleet</h2><div id="fleet"></div></aside>
+<section class="col" id="detail"></section>
+</main>
+<script>
+const H=3600000,SIX=6*H;
+let off=0;const now=()=>Date.now()+off;
+const V=[
+{id:1,name:"Truck 01",plate:"DL 1G 4521",lat:28.61,lon:77.21,dl:.012,dn:.018,bat:92},
+{id:2,name:"Truck 02",plate:"HR 55 AB 9034",lat:28.46,lon:77.03,dl:-.01,dn:.02,bat:78},
+{id:3,name:"Truck 03",plate:"UP 16 CT 7712",lat:28.57,lon:77.33,dl:.014,dn:-.015,bat:64}];
+V.forEach((v,i)=>{v.cap="closed";v.offline=false;v.lastHb=now()-(i+1)*H;v.trail=[[v.lat-v.dl*2,v.lon-v.dn*2],[v.lat-v.dl,v.lon-v.dn],[v.lat,v.lon]];v.ev=[{t:v.lastHb,k:"hb",m:"Heartbeat received · position updated"}]});
+let sel=1;
+const B={a:28.38,b:28.75,c:76.95,d:77.45},W=600,Hh=360;
+const px=(la,lo)=>[(lo-B.c)/(B.d-B.c)*W,(B.b-la)/(B.b-B.a)*Hh];
+const tm=t=>new Date(t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+const dur=ms=>{const m=Math.round(ms/60000);return m<60?m+" min":Math.floor(m/60)+"h "+(m%60)+"m"};
+function status(v){
+if(v.cap==="open")return{c:"bad",l:"CAP OPENED",t:"t-bad"};
+if(v.offline||now()-v.lastHb>SIX+15*60000)return{c:"warn",l:"NO SIGNAL",t:"t-warn"};
+return{c:"ok",l:"Secure",t:"t-ok"}}
+function add(v,k,m){v.ev.unshift({t:now(),k,m});}
+function move(v){v.lat+=v.dl*(0.6+Math.random()*.8);v.lon+=v.dn*(0.6+Math.random()*.8);
+if(v.lat>B.b-.03||v.lat<B.a+.03)v.dl*=-1;if(v.lon>B.d-.03||v.lon<B.c+.03)v.dn*=-1;
+v.trail.push([v.lat,v.lon]);if(v.trail.length>8)v.trail.shift();v.bat=Math.max(5,v.bat-1)}
+const cur=()=>V.find(v=>v.id===sel);
+const act={
+open(){const v=cur();if(v.cap==="open")return;v.cap="open";v.lastHb=now();v.offline=false;add(v,"op","Fuel cap OPENED · emergency location sent");toast=`Telegram alert sent: ${v.name} fuel cap opened!`;},
+close(){const v=cur();if(v.cap!=="open")return;v.cap="closed";add(v,"cl","Alert acknowledged · cap reported closed")},
+ff(){off+=SIX;V.forEach(v=>{if(!v.offline){move(v);v.lastHb=now();add(v,"hb","Scheduled 6h heartbeat · position updated")}else{add(v,"ms","Heartbeat MISSED · device unreachable")}});toast=null},
+kill(){const v=cur();v.offline=!v.offline;add(v,"ms",v.offline?"Device power/wire cut simulated":"Device back online");},
+reset(){location.reload()}};
+let toast=null;
+function render(){
+document.getElementById("fleet").innerHTML=V.map(v=>{const s=status(v);return`<button class="veh ${v.id===sel?"sel":""}" data-id="${v.id}"><i class="dot ${s.c}"></i><div><b>${v.name}</b><span>${v.plate} · ${s.l}</span></div></button>`}).join("");
+const v=cur(),s=status(v),next=v.lastHb+SIX-now();
+let ban="";
+if(v.cap==="open")ban=`<div class="banner">⚠ ${v.name}: fuel cap opened at ${tm(v.ev[0].t)}. Possible fuel theft!</div>`;
+else if(s.c==="warn")ban=`<div class="banner w">${v.name} missed its heartbeat. Device may be offline or tampered with.</div>`;
+else if(toast)ban=`<div class="banner w">${toast}</div>`;
+const pts=v.trail.map(p=>px(p[0],p[1]).join(",")).join(" "),[x,y]=px(v.lat,v.lon);
+const col=s.c==="bad"?"var(--bad)":s.c==="warn"?"var(--warn)":"var(--ok)";
+const roads=[...Array(7)].map((_,i)=>`<line x1="${i*100}" y1="0" x2="${i*100}" y2="${Hh}" stroke="var(--road)"/>`).join("")+[...Array(4)].map((_,i)=>`<line x1="0" y1="${i*90}" x2="${W}" y2="${i*90}" stroke="var(--road)"/>`).join("");
+document.getElementById("detail").innerHTML=`${ban}
+<div class="card"><h2>${v.name} · ${v.plate}</h2>
+<div class="grid">
+<div class="stat"><span>Cap status</span><b class="${s.t}">${s.l}</b></div>
+<div class="stat"><span>Last heartbeat</span><b>${dur(now()-v.lastHb)} ago</b></div>
+<div class="stat"><span>Next expected in</span><b>${next>0?dur(next):"Overdue"}</b></div>
+<div class="stat"><span>Device battery</span><b>${v.bat}%</b><div class="bar"><i style="width:${v.bat}%"></i></div></div></div>
+<div class="mapwrap"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vehicle location map">${roads}
+<path d="M0 300 C150 250 300 200 600 80" stroke="var(--road)" stroke-width="7" fill="none"/>
+<polyline points="${pts}" fill="none" stroke="var(--acc)" stroke-width="3" stroke-dasharray="6 5"/>
+${s.c==="bad"?`<circle class="pulse" cx="${x}" cy="${y}" r="9" fill="${col}"/>`:""}
+<circle cx="${x}" cy="${y}" r="9" fill="${col}" stroke="#fff" stroke-width="3"/>
+<text x="${x+14}" y="${y+4}" font-size="13" fill="var(--tx)">${v.name}</text></svg></div>
+<p class="note">GPS: ${v.lat.toFixed(4)}°N, ${v.lon.toFixed(4)}°E · Schematic NCR map for demo</p></div>
+<div class="card"><h2>Event log</h2><ul class="log">${v.ev.slice(0,12).map(e=>`<li><time>${tm(e.t)}</time><span class="${e.k==="op"?"t-bad":e.k==="ms"?"t-warn":""}">${e.m}</span></li>`).join("")}</ul></div>
+<div class="card"><h2>Demo simulator</h2><div class="btns">
+<button class="b d" data-a="open">Simulate cap opened</button>
+<button class="b" data-a="close">Acknowledge alert</button>
+<button class="b p" data-a="ff">Fast-forward 6 h</button>
+<button class="b" data-a="kill">Toggle device offline</button>
+<button class="b" data-a="reset">Reset</button></div>
+<p class="note">Real device: reed switch wakes the ESP32, which sends GPS + alert over GSM; a 6-hour timer sends heartbeats.</p></div>`}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-a]"),f=e.target.closest("[data-id]");
+if(a){act[a.dataset.a]();render()}else if(f){sel=+f.dataset.id;toast=null;render()}});
+setInterval(render,30000);render();
+(function(){const c=document.getElementById("rain"),x=c.getContext("2d");let w,h,drops;const ch="ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄ0123456789ABCDEF";
+function init(){w=c.width=innerWidth;h=c.height=innerHeight;drops=Array(Math.floor(w/16)).fill(0).map(()=>Math.random()*h/16)}
+init();addEventListener("resize",init);
+if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+setInterval(()=>{x.fillStyle="rgba(0,0,0,.08)";x.fillRect(0,0,w,h);x.fillStyle="#00ff41";x.font="14px monospace";
+drops.forEach((d,i)=>{x.fillText(ch[Math.floor(Math.random()*ch.length)],i*16,d*16);if(d*16>h&&Math.random()>.975)drops[i]=0;drops[i]++})},50)})();
+</script>
+</body>
+</html>
